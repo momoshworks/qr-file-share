@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+uploads/
+files_db.json
+.env
+.env.*
+*.log

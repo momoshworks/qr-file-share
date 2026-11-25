@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الملف غير متوفر | QR Drop</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: #0b0f19;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+        .error-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 32px 24px;
+            max-width: 420px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-card">
+        <div style="font-size: 54px; margin-bottom: 12px;">🔍</div>
+        <h2 style="font-weight: 800; margin-bottom: 8px;">عذراً، هذا الرابط غير موجود</h2>
+        <p style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 24px;">
+            قد يكون تم حذف الملف من الكمبيوتر أو انتهت جلسة المشاركة.
+        </p>
+        <a href="/upload-portal" class="btn btn-primary btn-block" style="text-decoration: none;">
+            إرسال ملف جديد للكمبيوتر 📤
+        </a>
+    </div>
+</body>
+</html>

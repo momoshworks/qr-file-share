@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>تحميل الملفات | QR Drop</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #090d16 0%, #111827 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .mobile-card {
+            background: rgba(23, 31, 48, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            width: 100%;
+            max-width: 480px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        .preview-box {
+            margin: 16px 0;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #000;
+            max-height: 260px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .preview-box img, .preview-box video {
+            max-width: 100%;
+            max-height: 260px;
+            object-fit: contain;
+        }
+        .preview-box audio {
+            width: 100%;
+            padding: 12px;
+        }
+        .file-item-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 14px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-align: right;
+            gap: 12px;
+        }
+        .file-details {
+            flex: 1;
+            overflow: hidden;
+        }
+        .file-name-truncated {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #f1f5f9;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .file-meta-sub {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+        .download-btn-pulsing {
+            animation: pulseGlow 2s infinite;
+        }
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.5); }
+            70% { box-shadow: 0 0 0 14px rgba(56, 189, 248, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-card">
+        <div class="logo-box" style="margin: 0 auto 16px auto; width: 56px; height: 56px;">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+        </div>
+
+        <h2 style="font-size: 1.4rem; font-weight: 800; color: #fff; margin-bottom: 6px;">
+            {% if files|length == 1 %}
+            الملف جاهز للتحميل 📥
+            {% else %}
+            حزمة ملفات جاهزة للتحميل ({{ files|length }}) 📦
+            {% endif %}
+        </h2>
+
+        {% if share.note %}
+        <div class="tip-box" style="margin-bottom: 16px; text-align: right;">
+            💬 <strong>رسالة مرفقة:</strong> {{ share.note }}
+        </div>
+        {% endif %}
+
+        <!-- Single File Preview / Details -->
+        {% if files|length == 1 %}
+            {% set file = files[0] %}
+            <div class="file-item-card" style="margin-top: 16px; flex-direction: column; text-align: center;">
+                <div class="file-name-truncated" style="font-size: 1.1rem; width: 100%;">
+                    {{ file.name }}
+                </div>
+                <div class="file-meta-sub">
+                    الحجم: <strong>{{ file.size_formatted }}</strong> | النوع: {{ file.mime_type }}
+                </div>
+            </div>
+
+            <!-- Media Preview if image, audio, or video -->
+            {% if 'image' in file.mime_type %}
+            <div class="preview-box">
+                <img src="/preview/{{ file.id }}" alt="معاينة الصورة" loading="lazy">
+            </div>
+            {% elif 'audio' in file.mime_type %}
+            <div class="preview-box">
+                <audio controls src="/preview/{{ file.id }}"></audio>
+            </div>
+            {% elif 'video' in file.mime_type %}
+            <div class="preview-box">
+                <video controls playsinline src="/preview/{{ file.id }}"></video>
+            </div>
+            {% endif %}
+
+            <a href="/download/{{ file.id }}" class="btn btn-accent btn-block download-btn-pulsing" style="font-size: 1.1rem; padding: 14px; margin-top: 16px; text-decoration: none;">
+                ⬇️ بدء تحميل الملف الآن
+            </a>
+
+        <!-- Multiple Files List -->
+        {% else %}
+            <div style="margin: 16px 0; max-height: 280px; overflow-y: auto;">
+                {% for file in files %}
+                <div class="file-item-card">
+                    <div class="file-details">
+                        <div class="file-name-truncated">{{ file.name }}</div>
+                        <div class="file-meta-sub">{{ file.size_formatted }}</div>
+                    </div>
+                    <a href="/download/{{ file.id }}" class="btn btn-secondary btn-sm" style="text-decoration: none;">
+                        تحميل
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+
+            <a href="/download-zip/{{ share.id }}" class="btn btn-accent btn-block download-btn-pulsing" style="font-size: 1.1rem; padding: 14px; text-decoration: none;">
+                📦 تحميل جميع الملفات (ZIP - {{ share.total_size_formatted }})
+            </a>
+        {% endif %}
+
+        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08);">
+            <a href="/upload-portal" style="color: #38bdf8; text-decoration: none; font-size: 0.9rem; font-weight: 600;">
+                📤 تريد إرسال ملف من هاتفك إلى الكمبيوتر؟ اضغط هنا
+            </a>
+        </div>
+    </div>
+</body>
+</html>

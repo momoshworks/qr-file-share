@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>إرسال ملفات إلى الكمبيوتر | QR Drop</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #090d16 0%, #111827 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .mobile-card {
+            background: rgba(23, 31, 48, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            width: 100%;
+            max-width: 480px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        .upload-picker-box {
+            border: 2px dashed rgba(56, 189, 248, 0.4);
+            background: rgba(56, 189, 248, 0.05);
+            border-radius: 20px;
+            padding: 28px 16px;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .upload-picker-box:active {
+            transform: scale(0.98);
+            background: rgba(56, 189, 248, 0.12);
+        }
+        .progress-container {
+            margin: 16px 0;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            height: 12px;
+            overflow: hidden;
+            display: none;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #38bdf8, #818cf8);
+            transition: width 0.15s ease;
+        }
+        .success-box {
+            display: none;
+            padding: 20px 0;
+        }
+        .checkmark-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px auto;
+            font-size: 32px;
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-card">
+        <div id="uploadFormState">
+            <div class="logo-box" style="margin: 0 auto 16px auto; width: 56px; height: 56px;">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+            </div>
+
+            <h2 style="font-size: 1.4rem; font-weight: 800; color: #fff;">
+                إرسال ملفات للكمبيوتر 📤
+            </h2>
+            <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 4px;">
+                سيصل الملف فوراً إلى شاشة الكمبيوتر عبر الواي فاي
+            </p>
+
+            <input type="file" id="mobileFileInput" multiple style="display: none;">
+            
+            <div class="upload-picker-box" onclick="document.getElementById('mobileFileInput').click()">
+                <div style="font-size: 40px; margin-bottom: 8px;">📂</div>
+                <div style="font-weight: 700; color: #e2e8f0; font-size: 1.05rem;">
+                    انقر لاختيار ملفات أو صور أو فيديوهات
+                </div>
+                <div style="color: #64748b; font-size: 0.8rem; margin-top: 6px;">
+                    يمكنك تحديد أكثر من ملف في نفس الوقت
+                </div>
+            </div>
+
+            <div id="selectedFilesSummary" style="display: none; text-align: right; margin-bottom: 16px;">
+                <h4 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 8px;">الملفات المختارة:</h4>
+                <ul id="mobileFilesList" class="file-list" style="max-height: 160px; overflow-y: auto;"></ul>
+                
+                <div class="form-group" style="margin-top: 12px;">
+                    <input type="text" id="mobileNoteInput" class="form-input" placeholder="رسالة مرفقة مع الملف (اختياري)...">
+                </div>
+
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar-fill" id="progressBarFill"></div>
+                </div>
+                <div id="progressText" style="color: #94a3b8; font-size: 0.85rem; text-align: center; display: none; margin-bottom: 10px;">
+                    جاري الرفع: 0%
+                </div>
+
+                <button id="startUploadBtn" class="btn btn-accent btn-block" style="padding: 14px; font-size: 1.05rem;">
+                    🚀 إرسال الآن إلى الكمبيوتر
+                </button>
+            </div>
+        </div>
+
+        <!-- Success State -->
+        <div id="successState" class="success-box">
+            <div class="checkmark-icon">✓</div>
+            <h3 style="color: #fff; font-size: 1.3rem; font-weight: 800; margin-bottom: 8px;">
+                وصل الملف للكمبيوتر بنجاح! 🎉
+            </h3>
+            <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 24px;">
+                تم حفظ الملف على جهاز الكمبيوتر وهو متاح الآن في سجل الملفات.
+            </p>
+            <button class="btn btn-secondary btn-block" onclick="resetUploadForm()">
+                إرسال ملفات أخرى ➕
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('mobileFileInput');
+        const selectedSummary = document.getElementById('selectedFilesSummary');
+        const mobileFilesList = document.getElementById('mobileFilesList');
+        const startUploadBtn = document.getElementById('startUploadBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBarFill = document.getElementById('progressBarFill');
+        const progressText = document.getElementById('progressText');
+        const uploadFormState = document.getElementById('uploadFormState');
+        const successState = document.getElementById('successState');
+        const mobileNoteInput = document.getElementById('mobileNoteInput');
+
+        let selectedFiles = [];
+
+        fileInput.addEventListener('change', (e) => {
+            selectedFiles = Array.from(e.target.files);
+            renderSelectedFiles();
+        });
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function renderSelectedFiles() {
+            if (selectedFiles.length === 0) {
+                selectedSummary.style.display = 'none';
+                return;
+            }
+            selectedSummary.style.display = 'block';
+            mobileFilesList.innerHTML = '';
+            selectedFiles.forEach((f, idx) => {
+                const li = document.createElement('li');
+                li.className = 'file-item';
+                li.innerHTML = `
+                    <div style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        <strong>${f.name}</strong>
+                        <div style="font-size:0.75rem; color:#94a3b8;">${formatBytes(f.size)}</div>
+                    </div>
+                `;
+                mobileFilesList.appendChild(li);
+            });
+        }
+
+        startUploadBtn.addEventListener('click', () => {
+            if (selectedFiles.length === 0) return;
+
+            const formData = new FormData();
+            selectedFiles.forEach(f => formData.append('files', f));
+            formData.append('direction', 'phone_to_pc');
+            formData.append('note', mobileNoteInput.value.trim());
+
+            progressContainer.style.display = 'block';
+            progressText.style.display = 'block';
+            startUploadBtn.disabled = true;
+            startUploadBtn.textContent = 'جاري النقل...';
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/upload', true);
+
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    progressBarFill.style.width = percent + '%';
+                    progressText.textContent = `جاري الرفع: ${percent}% (${formatBytes(e.loaded)} من ${formatBytes(e.total)})`;
+                }
+            };
+
+            xhr.onload = () => {
+                if (xhr.status === 200) {
+                    uploadFormState.style.display = 'none';
+                    successState.style.display = 'block';
+                    if (navigator.vibrate) navigator.vibrate(200);
+                } else {
+                    alert('حدث خطأ أثناء الرفع، يُرجى المحاولة مرة أخرى.');
+                    resetUploadForm();
+                }
+            };
+
+            xhr.onerror = () => {
+                alert('فشل الاتصال بالكمبيوتر. تأكد أن الهاتف متصل بنفس شبكة الواي فاي.');
+                resetUploadForm();
+            };
+
+            xhr.send(formData);
+        });
+
+        function resetUploadForm() {
+            selectedFiles = [];
+            fileInput.value = '';
+            mobileNoteInput.value = '';
+            progressBarFill.style.width = '0%';
+            progressContainer.style.display = 'none';
+            progressText.style.display = 'none';
+            startUploadBtn.disabled = false;
+            startUploadBtn.textContent = '🚀 إرسال الآن إلى الكمبيوتر';
+            selectedSummary.style.display = 'none';
+            successState.style.display = 'none';
+            uploadFormState.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Drop | ناقل الملفات عبر الـ QR Code</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Navigation Bar -->
+        <header class="navbar">
+            <div class="brand">
+                <div class="logo-box">
+                    <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                        <path d="M10 7h4v4h-4z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="brand-title">QR Drop Pro</h1>
+                    <p class="brand-subtitle">نقل فوري للملفات بالـ QR Code عبر الواي فاي</p>
+                </div>
+            </div>
+
+            <div class="nav-controls">
+                <!-- Network IP Selector -->
+                <div class="network-badge" title="عنوان الشبكة المحلية الخاص بجهازك">
+                    <span class="pulse-dot"></span>
+                    <label for="networkIpSelect">الشبكة:</label>
+                    <select id="networkIpSelect" class="ip-select">
+                        {% for iface in interfaces %}
+                        <option value="{{ iface.ip }}" {% if iface.is_primary %}selected{% endif %}>
+                            {{ iface.name }} ({{ iface.ip }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <span class="port-tag">:{{ port }}</span>
+                </div>
+
+                <!-- Explorer Button -->
+                <button id="openFolderBtn" class="btn btn-secondary btn-sm" title="فتح مجلد الملفات على الكمبيوتر">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    فتح المجلد
+                </button>
+
+                <!-- Sound Toggle -->
+                <button id="soundToggleBtn" class="icon-btn" title="تفعيل/كتم الصوت">
+                    <span id="soundIcon">🔊</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Workspace Tabs -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="sendTab">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 2L11 13"></path>
+                    <path d="M22 2l-7 20-4-9-9-4 20-7z"></path>
+                </svg>
+                إرسال إلى الهاتف (PC ➔ Phone)
+            </button>
+            <button class="tab-btn" data-tab="receiveTab">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2v10m0 0l-3-3m3 3l3-3"></path>
+                    <rect x="2" y="14" width="20" height="8" rx="2"></rect>
+                </svg>
+                استقبال من الهاتف (Phone ➔ PC)
+            </button>
+            <button class="tab-btn" data-tab="historyTab">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                سجل الملفات (<span id="historyCount">0</span>)
+            </button>
+        </div>
+
+        <!-- Tab 1: Send Files (PC -> Phone) -->
+        <main class="tab-content active" id="sendTab">
+            <div class="grid-2col">
+                <!-- Dropzone Section -->
+                <section class="card dropzone-card">
+                    <div class="dropzone" id="fileDropzone">
+                        <input type="file" id="fileInput" multiple style="display: none;">
+                        <div class="drop-icon-wrapper">
+                            <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                        </div>
+                        <h3>اسحب الملفات وأفلتها هنا</h3>
+                        <p class="dropzone-hint">أو انقر لاختيار الملفات من جهازك (يدعم أي صيغة أو حجم)</p>
+                        <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                            اختيار ملفات...
+                        </button>
+                    </div>
+
+                    <!-- Selected Files Queue -->
+                    <div class="selected-files-box" id="selectedFilesBox" style="display: none;">
+                        <div class="box-header">
+                            <h4>الملفات المحددة (<span id="stagedCount">0</span>)</h4>
+                            <button class="btn-text text-danger" id="clearStagedBtn">إلغاء التحديد</button>
+                        </div>
+                        <ul class="file-list" id="stagedFileList"></ul>
+
+                        <div class="form-group">
+                            <label for="shareNote">ملاحظة أو رسالة مرفقة (اختياري):</label>
+                            <input type="text" id="shareNote" class="form-input" placeholder="اكتب ملاحظة تظهر على شاشة الهاتف...">
+                        </div>
+
+                        <button id="uploadAndGenerateBtn" class="btn btn-accent btn-block">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="14" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
+                            </svg>
+                            إنشاء QR Code ومشاركة الملفات
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Active QR Code Showcase -->
+                <section class="card qr-display-card">
+                    <div class="card-header">
+                        <h3>رمز الـ QR للمشاركة</h3>
+                        <span class="status-pill" id="qrStatusPill">في الانتظار</span>
+                    </div>
+
+                    <div class="qr-placeholder" id="qrPlaceholder">
+                        <div class="qr-glow-box">
+                            <img id="activeQrImage" src="" alt="QR Code" style="display: none;">
+                            <div class="qr-empty-state" id="qrEmptyState">
+                                <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.2">
+                                    <rect x="3" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="14" width="7" height="7"></rect>
+                                    <rect x="3" y="14" width="7" height="7"></rect>
+                                    <path d="M7 17h.01M17 17h.01M17 7h.01"></path>
+                                </svg>
+                                <p>اختر ملفاً واضغط على زر إنشاء QR Code ليظهر الكود هنا فوراً</p>
+                            </div>
+                        </div>
+
+                        <div class="qr-details" id="qrDetails" style="display: none;">
+                            <p class="qr-url-text" id="activeQrUrl"></p>
+                            <div class="btn-group">
+                                <button id="copyQrUrlBtn" class="btn btn-secondary btn-sm">
+                                    📋 نسخ الرابط
+                                </button>
+                                <a id="openQrUrlBtn" href="#" target="_blank" class="btn btn-secondary btn-sm">
+                                    🔗 فتح في تبويب جديد
+                                </a>
+                            </div>
+                            <div class="tip-box">
+                                💡 <strong>طريقة الاستخدام:</strong> افتح تطبيق الكاميرا على هاتفك ووجّهها للكود أعلاه لتحميل الملف بأقصى سرعة للواي فاي!
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- Tab 2: Receive Files (Phone -> PC) -->
+        <main class="tab-content" id="receiveTab">
+            <div class="grid-2col">
+                <section class="card qr-display-card">
+                    <div class="card-header">
+                        <h3>بوابة رفع الملفات من الهاتف</h3>
+                        <span class="badge badge-success">جاهز للاستقبال</span>
+                    </div>
+                    <div class="qr-placeholder">
+                        <div class="qr-glow-box">
+                            <img id="receiveQrImage" src="" alt="Upload Portal QR">
+                        </div>
+                        <div class="qr-details">
+                            <p class="qr-url-text" id="receivePortalUrl"></p>
+                            <div class="btn-group">
+                                <button id="copyReceiveUrlBtn" class="btn btn-secondary btn-sm">
+                                    📋 نسخ رابط البوابة
+                                </button>
+                                <a id="openReceiveUrlBtn" href="#" target="_blank" class="btn btn-secondary btn-sm">
+                                    🔗 تجربة على الكمبيوتر
+                                </a>
+                            </div>
+                            <div class="tip-box">
+                                📱 <strong>ارفع أي ملف من هاتفك:</strong> امسح هذا الكود بكاميرا الموبايل لتفتح صفحة تتيح لك اختيار الصور، الفيديوهات أو المستندات وإرسالها إلى الكمبيوتر في ثوانٍ معدودة.
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <div class="card-header">
+                        <h3>الملفات المستلمة من الهاتف حديثاً</h3>
+                        <button id="clearReceivedBtn" class="btn-text text-danger">مسح الكل</button>
+                    </div>
+                    <div id="incomingFilesList" class="incoming-files-container">
+                        <div class="empty-state-small">
+                            لم تستلم أي ملفات من الهاتف حتى الآن. امسح الكود بالهاتف وارفع أول ملف!
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- Tab 3: History & Manage Files -->
+        <main class="tab-content" id="historyTab">
+            <section class="card">
+                <div class="card-header">
+                    <h3>جميع المشاركات والملفات النشطة</h3>
+                    <div class="btn-group">
+                        <button id="refreshHistoryBtn" class="btn btn-secondary btn-sm">تحديث القائمة</button>
+                        <button id="clearAllBtn" class="btn btn-danger btn-sm">حذف كل الملفات</button>
+                    </div>
+                </div>
+
+                <div class="history-table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>الملف / الحزمة</th>
+                                <th>الاتجاه</th>
+                                <th>الحجم</th>
+                                <th>التحميلات</th>
+                                <th>تاريخ الإنشاء</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <tr>
+                                <td colspan="6" class="text-center py-4">جاري تحميل السجل...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <!-- QR Code Modal (for viewing any share's QR code from history) -->
+        <div id="qrModal" class="modal-overlay" style="display: none;">
+            <div class="modal-card">
+                <button class="modal-close-btn" id="closeQrModalBtn">&times;</button>
+                <h3 id="modalShareTitle">رمز QR للمشاركة</h3>
+                <div class="modal-qr-box">
+                    <img id="modalQrImage" src="" alt="Share QR">
+                </div>
+                <p id="modalShareUrl" class="qr-url-text"></p>
+                <div class="btn-group justify-center">
+                    <button id="modalCopyUrlBtn" class="btn btn-secondary btn-sm">📋 نسخ الرابط</button>
+                    <a id="modalOpenUrlBtn" href="#" target="_blank" class="btn btn-primary btn-sm">🔗 فتح الرابط</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div id="toastContainer" class="toast-container"></div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
